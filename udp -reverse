@@ -1,0 +1,71 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    int cli;
+    char bfr[2002]={0};
+    char s[100];
+    struct sockaddr_in servaddr;
+    socklen_t l=sizeof(servaddr);//chng from tcp
+    cli=socket(AF_INET,SOCK_DGRAM,0);
+    //check <0
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(2002);
+    servaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+
+    
+    printf("enter str to check\n");
+    fgets(s,sizeof(s),stdin);
+    //chng from tcp
+    //
+    s[strcspn(s,"\n")]='\0';
+    sendto(cli,s,strlen(s),0,(struct sockaddr *)&servaddr,sizeof(servaddr));
+    recvfrom(cli,bfr,sizeof(bfr),0,(struct sockaddr *)&servaddr,&l);
+    printf("%s",bfr);
+    close(cli);
+}
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    int serv;
+    char smsg[2000]={0};
+    char cmsg[2000]={0};
+    struct sockaddr_in servaddr,cliaddr;
+    socklen_t l=sizeof(cliaddr);
+    serv=socket(AF_INET,SOCK_DGRAM,0);
+    //check <0
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(2002);
+    servaddr.sin_addr.s_addr=INADDR_ANY;
+    bind(serv,(struct sockaddr *)&servaddr,sizeof(servaddr));
+    while(1){
+         memset(cmsg, 0, sizeof(cmsg));
+        memset(smsg, 0, sizeof(smsg));
+    int r=recvfrom(serv,cmsg,sizeof(cmsg)-1,0,(struct sockaddr *)&cliaddr,&l);//check<=0
+    printf("%s\n",cmsg);
+    cmsg[r]='\0';
+    int len=strlen(cmsg);
+   
+    for(int i=0;i<len/2;i++)
+    {
+      char t=cmsg[i];
+      cmsg[i]=cmsg[len-i-1];
+      cmsg[len-i-1]=t;
+    }
+    strcpy(smsg,cmsg);
+     sendto(serv,smsg,strlen(smsg),0,(struct sockaddr *)&cliaddr,sizeof(cliaddr));
+    }
+   //close(ns);
+    close(serv);
+}
