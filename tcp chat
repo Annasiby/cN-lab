@@ -1,0 +1,115 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<unistd.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+void main()
+{
+    int clt;
+    struct sockaddr_in servaddr;
+    char smsg[1024]={0};
+     char cmsg[1024]={0};
+    clt=socket(AF_INET,SOCK_STREAM,0);
+    if(clt<0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("socket created succesfully\n");
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(6265);
+    servaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    if(connect(clt,(struct sockaddr *)&servaddr,sizeof(servaddr))<0)
+    {
+         printf("eror");
+        exit(1);
+    }
+    printf("connected\n");
+    printf("chat started\n");
+    while(1){
+        memset(smsg,0,sizeof(smsg));
+        memset(cmsg,0,sizeof(cmsg));
+        printf("You: ");
+    fgets(cmsg,sizeof(cmsg),stdin);
+   // send(clt,cmsg,sizeof(cmsg),0)
+    if(send(clt,cmsg,strlen(cmsg)+1,0)<0) //send -  strlen
+    {
+        printf("eror");
+        exit(1);
+    }
+   
+    if(recv(clt,smsg,sizeof(smsg),0)<0)
+    {
+        printf("eror");
+        exit(1);
+        
+    }
+    printf("server: %s",smsg);
+     if(strncmp(smsg,"bye",3)==0)
+    {
+        break;
+    }
+    }
+    close(clt);
+}
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdio.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+void main()
+{
+    int sv,ns;
+    struct sockaddr_in  serveraddr,claddr;
+    char smsg[1024]={0};
+    char cmsg[1024]={0};
+    socklen_t l=sizeof(claddr);
+    sv=socket(AF_INET,SOCK_STREAM,0);
+    if(sv==0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("socket created succesfully\n");
+    serveraddr.sin_family=AF_INET;
+    serveraddr.sin_port=htons(6265);
+    serveraddr.sin_addr.s_addr=INADDR_ANY;
+    if(bind(sv,(struct sockaddr *)&serveraddr,sizeof(serveraddr))<0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("binding succesful\n");
+    if(listen(sv,3)<0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("listening\n");
+    ns=accept(sv,(struct sockaddr *)&claddr,&l);
+     if (ns < 0) {
+        perror("Accept failed");
+        exit(1);
+    }
+    while(1)
+    {
+        memset(smsg,0, sizeof(smsg));
+        memset(cmsg,0,sizeof(cmsg));
+        recv(ns,cmsg,sizeof(cmsg),0);
+        printf("client: %s",cmsg);
+         printf("You: ");
+       fgets(smsg,sizeof(smsg),stdin);//cant use scan here as it reads a single word only
+        send(ns,smsg,strlen(smsg)+1,0);
+         if(strncmp(smsg,"bye",3)==0)
+        {
+            break;
+        }
+    }
+    close(sv);
+    close(ns);
+}
