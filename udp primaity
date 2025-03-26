@@ -1,0 +1,80 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    int cli;
+    char bfr[2002]={0};
+    char num[100];
+    struct sockaddr_in servaddr;
+    socklen_t l=sizeof(servaddr);//chng from tcp
+    cli=socket(AF_INET,SOCK_DGRAM,0);
+    //check <0
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(2002);
+    servaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+  //  connect(cli,(struct sockaddr *)&servaddr,sizeof(servaddr));
+    
+    printf("enter no to check\n");
+    fgets(num,sizeof(num),stdin);
+    //chng from tcp
+    //  num[strcspn(num, "\n")] = '\0';  // Remove newline
+    sendto(cli,num,strlen(num),0,(struct sockaddr *)&servaddr,sizeof(servaddr));
+    recvfrom(cli,bfr,sizeof(bfr),0,(struct sockaddr *)&servaddr,&l);
+    printf("%s",bfr);
+    close(cli);
+}
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    int serv;
+    char smsg[2000]={0};
+    char cmsg[2000]={0};
+    struct sockaddr_in servaddr,cliaddr;
+    socklen_t l=sizeof(cliaddr);
+    serv=socket(AF_INET,SOCK_DGRAM,0);
+    //check <0
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(2002);
+    servaddr.sin_addr.s_addr=INADDR_ANY;
+    bind(serv,(struct sockaddr *)&servaddr,sizeof(servaddr));
+    //check <0
+   // if(listen(serv,5)<0)
+    //{
+    //    exit(1);
+    //}
+    //ns=accept(serv,(struct sockaddr *)&cliaddr,&l);
+    recvfrom(serv,cmsg,sizeof(cmsg),0,(struct sockaddr *)&cliaddr,&l);//check<=0
+    printf("%s\n",cmsg);
+    int n=atoi(cmsg);
+    int flag=0;
+    for(int i=2;i<=n/2;i++)
+    {
+        if(n%i==0)
+        {
+            flag=1;
+            break;
+        }
+    }
+     if(flag==0)
+     {
+         strcpy(smsg,"is a prime number\n");
+     }
+     else
+     {
+         strcpy(smsg,"not a prime number\n");
+     }
+     sendto(serv,smsg,strlen(smsg),0,(struct sockaddr *)&cliaddr,sizeof(cliaddr));
+   //close(ns);
+    close(serv);
+}
