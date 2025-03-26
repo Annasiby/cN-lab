@@ -1,0 +1,81 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    int cli;
+    char bfr[1024]={0};
+    char num[100];
+    struct sockaddr_in servaddr;
+    cli=socket(AF_INET,SOCK_STREAM,0);
+    //check <0
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(6265);
+    servaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    connect(cli,(struct sockaddr *)&servaddr,sizeof(servaddr));
+    //check <0
+    printf("enter no to check\n");
+    fgets(num,sizeof(num),stdin);
+    //more safe than scanf
+    //use strncmp since neline character may be at the end
+    //num[strcspn(num, "\n")] = '\0';  // Keep this line
+
+    send(cli,num,strlen(num),0);
+    recv(cli,bfr,sizeof(bfr),0);
+    printf("%s",bfr);
+    close(cli);
+}
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    int serv,ns;
+    char smsg[1024]={0};
+    char cmsg[1024]={0};
+    struct sockaddr_in servaddr,cliaddr;
+    socklen_t l=sizeof(cliaddr);
+    serv=socket(AF_INET,SOCK_STREAM,0);
+    //check <0
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(6265);
+    servaddr.sin_addr.s_addr=INADDR_ANY;
+    bind(serv,(struct sockaddr *)&servaddr,sizeof(servaddr));
+    //check <0
+    if(listen(serv,5)<0)
+    {
+        exit(1);
+    }
+    ns=accept(serv,(struct sockaddr *)&cliaddr,&l);
+    recv(ns,cmsg,sizeof(cmsg),0);//check<=0
+    printf("%s\n",cmsg);
+    int n=atoi(cmsg);
+    int flag=0;
+    for(int i=2;i<=n/2;i++)
+    {
+        if(n%i==0)
+        {
+            flag=1;
+            break;
+        }
+    }
+     if(flag==0)
+     {
+         strcpy(smsg,"is a prime number\n");
+     }
+     else
+     {
+         strcpy(smsg,"not a prime number\n");
+     }
+     send(ns,smsg,strlen(smsg),0);
+   close(ns);
+    close(serv);
+}
