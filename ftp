@@ -1,0 +1,99 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<unistd.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+void main()
+{
+    int cli;
+    struct sockaddr_in servaddr;
+    char bfr[1024]={0};
+    char fname[100];
+    cli=socket(AF_INET,SOCK_STREAM,0);
+    if(cli<0)
+        {
+            printf("socket error");
+            exit(1);
+        }
+        printf("socket ok\n");
+       servaddr.sin_family=AF_INET;
+        servaddr.sin_port=htons(6265);
+        servaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+        if(connect(cli,(struct sockaddr *)&servaddr,sizeof(servaddr))<0)
+        {
+             printf("connect error");
+            exit(1);
+        }
+        printf("connect ok\n");
+        fgets(fname,sizeof(fname),stdin);
+        fname[strcspn(fname,"\n")]='\0';
+        strcpy(bfr,fname);
+        send(cli,bfr,strlen(bfr),0);
+        
+      while(recv(cli,bfr,sizeof(bfr),0)>0){
+        printf("%s",bfr);
+      }
+        close(cli);
+        
+}
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<unistd.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+void main()
+{
+    int serv,ns;
+    struct sockaddr_in servaddr,cliaddr;
+    socklen_t l=sizeof(cliaddr);
+    char smsg[1024]={0};
+    char cmsg[1024]={0};
+    serv=socket(AF_INET,SOCK_STREAM,0);
+    if(serv<0)
+        {
+            printf("socket error");
+            exit(1);
+        }
+        printf("socket ok\n");
+         servaddr.sin_family=AF_INET;
+        servaddr.sin_port=htons(6265);
+        servaddr.sin_addr.s_addr=INADDR_ANY;
+        if(bind(serv,(struct sockaddr *)&servaddr,sizeof(servaddr))<0)
+        {
+             printf("bind error");
+            exit(1);
+        }
+        printf("bind ok\n");
+        if(listen(serv,5)<0)
+        {
+            printf("listenror");
+            exit(1);
+        }
+        printf("listen ok\n");
+        ns=accept(serv,(struct sockaddr *)&cliaddr,&l);
+        if(ns<0)
+        {
+             printf("ns error");
+            exit(1);
+        }
+        printf("ns ok\n");
+        
+
+        int r=recv(ns,cmsg,sizeof(cmsg)-1,0);
+        printf("%s",cmsg);
+        
+        cmsg[r]='\0';
+        FILE *file=fopen(cmsg,"r");
+        while(fgets(smsg,sizeof(smsg),file)!=NULL)
+        {
+         send(ns,smsg,strlen(smsg),0);//to send all lines
+        }
+         close(ns);
+        close(serv);
+        
+}
