@@ -1,0 +1,35 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+#include<string.h>
+#include<sys/socket.h>
+void main()
+{
+    int c;
+    struct sockaddr_in saddr,caddr;
+    socklen_t l=sizeof(saddr);
+    char b1[10]={0};
+    char b2[10]={0};
+    c=socket(AF_INET,SOCK_DGRAM,0);
+    printf("sock success\n");
+    saddr.sin_family=AF_INET;
+    saddr.sin_port=htons(2002);
+    saddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    while(1)
+    {
+    memset(b1,0,sizeof(b1));
+    fgets(b1,sizeof(b1),stdin);
+    b1[strcspn(b1,"\n")]='\0';
+    sendto(c,b1,strlen(b1),0,(struct sockaddr *)&saddr,l);
+    printf("send success\n");
+    if(strncmp(b1,"bye",3)==0)
+    {
+        exit(1);
+    }
+    recvfrom(c,b2,sizeof(b2),0,(struct sockaddr *)&saddr,&l);
+    printf("\nreceived: %s",b2);
+    }
+    close(c);
+}
