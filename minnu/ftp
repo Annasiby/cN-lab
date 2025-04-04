@@ -1,0 +1,116 @@
+#include<stdlib.h>
+#include<stdio.h>
+#include<string.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+#include<unistd.h>
+#include<sys/socket.h>
+char cmsg[1024]={0};
+char bfr[20]={0};
+void main()
+{
+    int c;
+    struct sockaddr_in servaddr;
+    c=socket(AF_INET,SOCK_STREAM,0);
+    if(c<0)
+    {
+        printf("error socket\n");
+        exit(1);
+    }
+    printf("socket success\n");
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(8080);
+    servaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    if(connect(c,(struct sockaddr *)&servaddr,sizeof(servaddr))<0)
+    {
+        printf("error connect\n");
+        exit(1);
+    }
+    printf("connect success");
+    printf("fname\n");
+    fgets(bfr,sizeof(bfr),stdin);
+    bfr[strcspn(bfr,"\n")]='\0';
+    send(c,bfr,strlen(bfr),0);
+    printf("content is\n");
+    memset(cmsg,sizeof(cmsg),0);
+    while(recv(c,cmsg,sizeof(cmsg),0)>00){
+    
+    
+    printf("%s",cmsg);
+    memset(cmsg,sizeof(cmsg),0);
+    }
+    close(c);
+}
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<string.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+#include<sys/socket.h>
+char cmsg[20]={0};
+char smsg[1024]={0};
+void main()
+{
+    int s,ns;
+    struct sockaddr_in saddr,caddr;
+    socklen_t l=sizeof(caddr);
+    s=socket(AF_INET,SOCK_STREAM,0);
+    if(s<0)
+    {
+        printf("error socket\n");
+        exit(1);
+    }
+    printf("socket success\n");
+    saddr.sin_family=AF_INET;
+    saddr.sin_port=htons(8080);
+    saddr.sin_addr.s_addr=INADDR_ANY;
+    if(bind(s,(struct sockaddr *)&saddr,sizeof(saddr))<0)
+    {
+        printf("error binding\n");
+        exit(1);
+    }
+    printf("bind success\n");
+    if(listen(s,5)<0)  //listen(s,5)
+    {
+        printf("error listening\n");
+        exit(1);
+    }
+    printf("listen success\n");
+    ns=accept(s,(struct sockaddr *)&caddr,&l);
+    if(ns<0)
+    {
+        printf("error acceptn");
+        exit(1);
+    }
+    int r=recv(ns,cmsg,sizeof(cmsg),0);
+    if(r<=0)
+    {
+        printf("no recv");
+        exit(1);
+    }
+    cmsg[r]='\0';
+    printf("%s",cmsg);
+    
+    FILE *f=fopen(cmsg,"r");
+    if(f==NULL)
+    {
+        printf("file error");
+        exit(1);
+    }
+    memset(cmsg,0,sizeof(cmsg));
+
+    while(fgets(smsg,sizeof(smsg),f)!=NULL)
+    {
+       
+    printf("%s",smsg);
+    send(ns,smsg,strlen(smsg),0); //strlen vvvvvimpo not sizeof()
+    memset(smsg,0,sizeof(smsg));
+    }
+    close(ns);
+    close(s);
+}
+ hi.txt
+ hi
+how are u
