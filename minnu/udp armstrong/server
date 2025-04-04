@@ -1,0 +1,74 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<math.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+#include<string.h>
+#include<sys/socket.h>
+void main()
+{
+    int s;
+    struct sockaddr_in servaddr,caddr;
+    socklen_t l=sizeof(caddr);
+    char b1[100]={0};
+    char b2[100]={0};
+    s=socket(AF_INET,SOCK_DGRAM,0);
+    if(s<0)
+    {
+        printf("s error");
+        exit(1);
+    }
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(2002);
+    servaddr.sin_addr.s_addr=INADDR_ANY;
+    if(bind(s,(struct sockaddr *)&servaddr,sizeof(servaddr))<0)
+    {
+        printf("bind error");
+        exit(1);
+    }
+    while(1)
+    {
+        memset(b1,0,sizeof(b1));
+        memset(b2,0,sizeof(b2));
+        int r=recvfrom(s,b1,sizeof(b1),0,(struct sockaddr *)&caddr,&l);
+        if(r<0)
+        {
+            printf("recv error");
+            exit(1); 
+        }
+        printf("\n received: %s",b1);
+        b1[r]='\0';
+        if(strncmp(b1,"bye",3)==0)
+        {
+            exit(1);
+        }
+        int sl=strlen(b1);
+      printf(" %d\n",sl);
+        int n=atoi(b1);
+        int m=n;
+        int sum=0;
+        while(n>0)
+        {
+            int d=n%10;
+             sum=sum+d*d*d;
+            n=n/10;
+        }
+        if(sum==m)
+        {
+            strcpy(b2,"arm");
+        }
+        else{
+            strcpy(b2,"not arm");
+        }
+        if(sendto(s,b2,strlen(b2),0,(struct sockaddr *)&caddr,l)<0)
+        {
+            printf("send error");
+            exit(1); 
+        }
+        printf(" %s\n",b2);
+    }
+    close(s);
+
+
+}
