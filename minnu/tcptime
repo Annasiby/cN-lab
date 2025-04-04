@@ -1,0 +1,102 @@
+client
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<time.h>
+char b1[124]={0};
+char b2[124]={0};
+void main()
+{
+    int c;
+    struct sockaddr_in saddr;
+    socklen_t l=sizeof(saddr);
+    c=socket(AF_INET,SOCK_STREAM,0);
+    if(c<0)
+    {
+        printf("sock error");
+        exit(1);
+    }
+    printf("sock suc\n");
+    saddr.sin_family=AF_INET;
+    saddr.sin_port=htons(2002);
+    saddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    if(connect(c,(struct sockaddr *)&saddr,sizeof(saddr))<0)
+    {
+        printf("connect error");
+        exit(1);
+    }
+    printf("connect suc\n");
+    fgets(b1,124,stdin);
+    send(c,b1,strlen(b1),0);
+    printf("send suc\n");
+    recv(c,b2,124,0);
+    printf("%s",b2);
+    printf(now());
+    close(c);
+}
+
+server
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<time.h>
+char b1[124]={0};
+char b2[124]={0};
+void main()
+{
+    int s,ns;
+    struct sockaddr_in saddr,caddr;
+    socklen_t l=sizeof(caddr);
+    saddr.sin_family=AF_INET;
+    saddr.sin_port=htons(2002);
+    saddr.sin_addr.s_addr=INADDR_ANY;
+    s=socket(AF_INET,SOCK_STREAM,0);
+    if(s<0)
+    {
+        printf("sock error");
+        exit(1);
+    }
+    printf("sock suc\n");
+    if(bind(s,(struct sockaddr *)&saddr,sizeof(saddr))<0)
+    {
+        printf("bind error");
+        exit(1);
+    }
+    printf("bind suc\n");
+    if(listen(s,5)<0)
+    {
+        printf("bind error");
+        exit(1);
+    }
+    printf("listening\n");
+    
+        ns=accept(s,(struct sockaddr *)&caddr,&l);
+        if(ns<0)
+        {
+            
+        printf("nserror");
+        exit(1);
+        }
+        printf("ns suc\n");
+        int r=recv(ns,b1,124,0);
+        if(r<0)
+        {
+            printf("recv error");
+        exit(1);
+        }
+        printf("received %s\n",b1);
+        time_t t=time(NULL);
+        char *tm=ctime(&t);
+        send(ns,tm,strlen(tm),0);
+        printf("send data %s\n",tm);
+        close(ns);
+        close(s);
+}
