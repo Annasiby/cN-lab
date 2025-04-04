@@ -1,0 +1,86 @@
+client
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/socket.h>
+#include<string.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    char fnm[10]={0};
+    char b[124]={0};
+    int c;
+    struct sockaddr_in saddr;
+    socklen_t l=sizeof(saddr);
+    saddr.sin_family=AF_INET;
+    saddr.sin_port=htons(2002);
+    saddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    c=socket(AF_INET,SOCK_STREAM,0);
+    connect(c,(struct sockaddr *)&saddr,l);
+    fgets(fnm,sizeof(fnm),stdin);
+    fnm[strcspn(fnm,"\n")]='\0';
+    send(c,fnm,strlen(fnm),0);
+    while(1)
+    {
+        memset(b,0,sizeof(b));
+        fgets(b,sizeof(b),stdin);
+        b[strcspn(b,"\n")]='\0';
+        if(strncmp(b,"bye",3)==0)
+        {
+            send(c,b,strlen(b),0);
+            exit(1);
+        }
+        send(c,b,strlen(b),0);
+
+    }
+    close(c);
+
+}
+server
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/socket.h>
+#include<string.h>
+#include<arpa/inet.h>
+#include<netinet/in.h>
+void main()
+{
+    char fnm[10]={0};
+    char b[124]={0};
+    int s,ns;
+    struct sockaddr_in saddr,caddr;
+    socklen_t l=sizeof(caddr);
+    saddr.sin_family=AF_INET;
+    saddr.sin_port=htons(2002);
+    saddr.sin_addr.s_addr=INADDR_ANY;
+    s=socket(AF_INET,SOCK_STREAM,0);
+    bind(s,(struct sockaddr *)&saddr,sizeof(saddr));
+    listen(s,5);
+    ns=accept(s,(struct sockaddr *)&caddr,&l);
+    int r=recv(ns,fnm,sizeof(fnm),0);
+    fnm[r]='\0';
+    printf("%s\n",fnm);
+    FILE *f=fopen(fnm,"a");
+    while(1)
+    {
+        memset(b,0,sizeof(b));
+        recv(ns,b,sizeof(b),0);
+        if(strncmp(b,"bye",3)==0)
+        {
+            exit(1);
+        }
+        fputs(b,f);
+        fputs("\n",f);
+        fflush(f);
+    }
+    fclose(f);
+    close(ns);
+    close(s);
+
+
+}
+hi.txt
+hmmm  well good job  keep it uphry..
+hehe
