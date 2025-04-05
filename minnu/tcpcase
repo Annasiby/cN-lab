@@ -1,0 +1,145 @@
+client
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<unistd.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+void main()
+{
+    int clt;
+    struct sockaddr_in servaddr;
+    char smsg[1024]={0};
+     char cmsg[1024]={0};
+    clt=socket(AF_INET,SOCK_STREAM,0);
+    if(clt<0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("socket created succesfully\n");
+    servaddr.sin_family=AF_INET;
+    servaddr.sin_port=htons(2002);
+    servaddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+    if(connect(clt,(struct sockaddr *)&servaddr,sizeof(servaddr))<0)
+    {
+         printf("eror");
+        exit(1);
+    }
+    printf("connected\n");
+    
+      
+    fgets(cmsg,sizeof(cmsg),stdin);
+   // send(clt,cmsg,sizeof(cmsg),0)
+    if(send(clt,cmsg,strlen(cmsg),0)<0) //send -  strlen
+    {
+        printf("eror");
+        exit(1);
+    }
+    while(1){
+        memset(smsg,0, sizeof(smsg));
+        memset(cmsg,0,sizeof(cmsg));
+        fgets(cmsg,sizeof(cmsg),stdin);
+        cmsg[strcspn(cmsg,"\n")]='\0';
+       
+        send(clt,cmsg,strlen(cmsg),0);
+        if(strncmp(cmsg,"end",3)==0)
+        {
+            exit(1);
+        }
+            
+    if(recv(clt,smsg,sizeof(smsg),0)<0)
+    {
+        printf("eror");
+        exit(1);
+        
+    }
+    printf(": %s",smsg);
+     
+    
+}
+    close(clt);
+}
+server
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdio.h>
+#include<unistd.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<ctype.h>
+void main()
+{
+    int sv,ns,i;
+    struct sockaddr_in  serveraddr,claddr;
+    char smsg[1024]={0};
+    char cmsg[1024]={0};
+    socklen_t l=sizeof(claddr);
+    sv=socket(AF_INET,SOCK_STREAM,0);
+    if(sv==0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("socket created succesfully\n");
+    serveraddr.sin_family=AF_INET;
+    serveraddr.sin_port=htons(2002);
+    serveraddr.sin_addr.s_addr=INADDR_ANY;
+    if(bind(sv,(struct sockaddr *)&serveraddr,sizeof(serveraddr))<0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("binding succesful\n");
+    if(listen(sv,3)<0)
+    {
+        printf("eror");
+        exit(1);
+    }
+    printf("listening\n");
+    ns=accept(sv,(struct sockaddr *)&claddr,&l);
+     if (ns < 0) {
+        perror("Accept failed");
+        exit(1);
+    }
+    int r=recv(ns,cmsg,sizeof(cmsg),0);
+    printf("%s",cmsg);
+    cmsg[r]='\0';
+    if(strncmp(cmsg,"lowercase",9)==0)
+    {
+    while(1)
+    {
+        memset(smsg,0, sizeof(smsg));
+        memset(cmsg,0,sizeof(cmsg));
+        int r=recv(ns,cmsg,sizeof(cmsg),0);
+        cmsg[r]='\0';
+        if(strncmp(cmsg,"end",3)==0)
+        {
+            exit(1);
+        }
+        
+       
+        printf("%s\n",cmsg);
+        if(strncmp(cmsg,"end",3)==0)
+        {
+            exit(1);
+        }
+        
+        int sl=strlen(cmsg);
+        for(i=0;i<sl;i++)
+        {
+            smsg[i]=tolower(cmsg[i]);
+        }
+        smsg[i]='\0';
+        printf("%s\n",smsg);
+        send(ns,smsg,strlen(smsg),0);
+        
+       
+    }
+}
+    close(sv);
+    close(ns);
+}
