@@ -2,67 +2,63 @@
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
-#include<sys/socket.h>
 #include<arpa/inet.h>
+#include<sys/socket.h>
 #include<netinet/in.h>
-char b1[1024]={0};
-char b2[1024]={0};
-void main()
-{
-    int c;
-    struct sockaddr_in saddr;
-    socklen_t l=sizeof(saddr);
-    saddr.sin_family=AF_INET;
-    saddr.sin_port=htons(2002);
-    saddr.sin_addr.s_addr=inet_addr("127.0.0.1");
-    c=socket(PF_INET,SOCK_STREAM,0);
-    if(c<0)
-    {
-        printf("err\n");
-        exit(1);
-    }
-    printf("socket\n");
-    if(connect(c,(struct sockaddr *)&saddr,l)<0)
-    {
-        printf("err\n");
-        exit(1);
-    }
-    printf("connect\n");
-    int k=5,m=1;
-    while(k!=0)
-    {
-        if(m<=5)
-        {
-            printf("sending\n");
-        }
-        if(m%2==0)
-        {
-            strcpy(b1,"frame");
-            printf("packet %d sent",m);
-        }
-        else{
-            strcpy(b1,"error");
-            printf("pkt lost\n");
-            for(int i=1;i<=3;i++)
-            {
-                printf("waiting sec %d\n",i);
-                    
-                sleep(1);
-            }
-            printf("retransmitting packet\n");
-            strcpy(b1,"frame");
-        }
-        send(c,b1,strlen(b1),0);
-        int r=recv(c,b2,sizeof(b2),0);
-        if(strncmp(b2,"ack",3)==0)
-        {
-            printf("ack for %d\n",m);
-        }
-        else{
-            printf(" no ack for %d\n",m);
-        }
-        k--;
-        m++;
-    }
-    close(c);
+
+int main(){
+	int client, y, x, k=5, m=1, p;
+	char buffer[1024];
+	struct sockaddr_in servAddr;
+	socklen_t addrSize = sizeof(servAddr);
+	
+	client = socket(PF_INET, SOCK_STREAM, 0);
+	servAddr.sin_family = AF_INET;
+	servAddr.sin_port = htons(5600);
+	servAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	memset(servAddr.sin_zero, '\0', sizeof(servAddr.sin_zero));
+	y = connect(client, (struct sockaddr*)&servAddr,addrSize);
+	if (y==-1){
+		printf("Error in connection\n");
+		exit(1);
+	}
+	while(k!=0){
+		if(m<=5){
+			printf("Sending %d\n",m);
+		}
+		if (m%2 == 0) {
+			strcpy(buffer,"frame");
+		} else {
+			strcpy(buffer,"error");
+			printf("Packet loss\n");
+			
+			for (p =1; p<=3; p++){
+				printf("Waiting for %d seconds\n",p);
+				sleep(1);
+			}
+			printf("Retransmitting...\n");
+			strcpy(buffer,"frame");
+		}
+		int x = send(client,buffer, strlen(buffer), 0);
+		if (x==-1){
+			printf("error in sending\n");
+			exit(1);
+		} else {
+			printf("Sent %d\n",m);
+		}
+		int z = recv(client, buffer, sizeof(buffer), 0 );
+		if (z==-1){
+			printf("Error in receiving data\n");
+			exit(1);
+		}
+		k--;
+		m++;
+		if (strncmp(buffer,"ack",3)==0){
+			printf("Ack received for %d\n",m-1);
+		} else {
+			printf("ack not received\n");
+		}
+	}
+	close(client);
+	return 0;
 }
