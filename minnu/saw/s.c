@@ -1,71 +1,66 @@
 #include<stdio.h>
-#include<stdlib.h>
 #include<string.h>
+#include<stdlib.h>
 #include<unistd.h>
-#include<sys/socket.h>
 #include<arpa/inet.h>
+#include<sys/socket.h>
 #include<netinet/in.h>
-char b1[1024]={0};
-char b2[1024]={0};
-void main()
-{
-    int s,ns;
-    struct sockaddr_in saddr,caddr;
-    socklen_t l=sizeof(caddr);
-    saddr.sin_family=AF_INET;
-    saddr.sin_port=htons(2002);
-    saddr.sin_addr.s_addr=INADDR_ANY;
-    s=socket(PF_INET,SOCK_STREAM,0);
-    if(s<0)
-    {
-        printf("err\n");
-        exit(1);
-    }
-    printf("socket\n");
-    if(bind(s,(struct sockaddr *)&saddr,l)<0)
-    {
-        printf("err\n");
-        exit(1);
-    }
-    printf("bind\n");
-    listen(s,5);
-    ns=accept(s,(struct sockaddr *)&caddr,&l);
-    int k=5,m=1;
-    while(k!=0)
-    {
-        int r=recv(ns,b2,sizeof(b2),0);
-        if(strncmp(b2,"frame",5)==0)
-        {
-            printf("frame %d received\n",m);
-        }
-        else{
-          
-            printf("not received\n");
-           
-        }
-       
-        if(m%2==0)
-        {
-            strcpy(b1,"ack");
-            
-        }
-        else{
-            strcpy(b1,"kca");
-            printf("ack lost\n");
-            for(int i=1;i<=3;i++)
-            {
-                printf("waiting sec %d\n",i);
-                    
-                sleep(1);
-            }
-            printf("retransmitting ack\n");
-            strcpy(b1,"ack");
-        }
-        send(ns,b1,strlen(b1),0);
-        
-        k--;
-        m++;
-    }
-    close(ns);
-    close(s);
+
+int main(){
+	int server, newSock, k=5, m=1, p;
+	char buffer[1024];
+	struct sockaddr_in servAddr, store;
+	socklen_t addrSize = sizeof(servAddr);
+	server = socket(PF_INET, SOCK_STREAM, 0);
+	servAddr.sin_family = AF_INET;
+	servAddr.sin_port = htons(5600);
+	servAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	memset(servAddr.sin_zero,'\0',sizeof(servAddr.sin_zero));
+	bind(server,(struct sockaddr*)&servAddr, sizeof(servAddr));
+	if (listen(server,5) == 0){
+		printf("Listening\n");
+	} else {
+		printf("Error\n");
+		exit(1);
+	}
+	newSock = accept(server, (struct sockaddr*)&store, &addrSize);
+	if (newSock == -1){
+		printf("Error in creating socket\n");
+		exit(1);
+	}
+	while(k!=0){
+		int y = recv(newSock, buffer, sizeof(buffer),0);
+		if (y==-1){
+			printf("Error in receiving\n");
+			exit(1);
+		}
+		if (strncmp(buffer,"frame",5)==0){
+			printf("Received %d successfully\n",m);
+		} else {
+			printf("Frame %d not received\n",m);
+		}
+		if (m%2 ==0){
+			strcpy(buffer,"ack");
+		} else {
+			strcpy(buffer,"kca");
+			printf("Ack lost\n");
+			for (p=1;p<=3;p++){
+				printf("Waiting for %d seconds\n",p);
+				sleep(1);
+			}
+			printf("Retransmitting Ack\n");
+			strcpy(buffer, "ack");
+		}
+		printf("Sending ack\n");
+		int z = send(newSock, buffer, strlen(buffer), 0);
+		if (z == -1){
+			printf("error in sending\n");
+			exit(1);
+		}
+		k--;
+		m++;
+	}
+	close(newSock);
+	close(server);
+	return(0);
 }
